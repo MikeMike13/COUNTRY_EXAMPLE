@@ -1,0 +1,6 @@
+matplotlib
+psycopg2
+pandas
+sys
+os
+dotenv
