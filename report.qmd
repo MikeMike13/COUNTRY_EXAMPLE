@@ -1,0 +1,53 @@
+---
+title: "Kazakstan"
+subtitle: "Quarterly country report"
+author: "CCC cc"
+date: today
+date-format: "YYYY[Q]Q"
+---
+
+## Last news
+* [Экономическое развитие как путь к миру: Токаев](https://www.zakon.kz/sobytiia/6508520-ekonomicheskoe-razvitie-kak-put-k-miru--tokaev-napisal-statyu-dlya-amerikanskogo-zhurnala.html) (Источник *National Interest*)
+
+## FX
+:::: {.columns}
+::: {.column width="50%"}
+```{python}
+#| out-width: "100%"
+#| fig-align: center
+#| fig-dpi: 300
+#| fig-cap: Source
+from db_utils import sovdb_read
+from datetime import datetime
+import matplotlib.pyplot as plt
+
+plt.rcParams['axes.titlelocation'] = 'left'
+plt.rcParams['axes.titlesize'] = 20
+plt.rcParams['axes.titleweight'] = 'bold'
+plt.rcParams['axes.titlepad'] = 20
+
+plt.rcParams['axes.spines.top'] = False
+plt.rcParams['axes.spines.left'] = False
+plt.rcParams['axes.spines.bottom'] = False
+plt.rcParams['axes.spines.right'] = False
+
+plt.rcParams['figure.autolayout'] = True
+
+
+Start = datetime(2016,1,1)
+df = sovdb_read("FX_KZTUSD_NBK",Start)
+
+if not df.empty:    
+    plt.figure()
+    plt.plot(df)
+    plt.title('KZT strengthened')    
+    plt.show()
+    plt.close()
+```
+:::
+
+::: {.column width="50%"}
+Some analytical text Some analytical text Some analytical text Some analytical text Some analytical text Some analytical text Some analytical text Some analytical text Some analytical text Some analytical text Some analytical text 
+:::
+
+::::

@@ -1,0 +1,29 @@
+project:
+  output-dir: reports
+
+format:
+  html: 
+    output-file: "report.html"
+    page-layout: full
+    margin-left: 20px
+    margin-right: 20px
+    #self-contained: true
+    embed-resources: true
+  #revealjs:
+  #  output-file: "presentation.html"
+  #  embed-resources: true    
+  #  slide-number: true
+  #  transition: fade
+  #pdf: 
+  #  output-file: "report.pdf"
+  #  fig-format: png
+  #  engine: jupyter
+  #  to: pdf
+    
+echo: false
+
+execute:
+  warning: false
+  message: false    
+
+fig-format: svg        
