@@ -9,6 +9,53 @@ date-format: "YYYY[Q]Q"
 ## Last news
 * [Экономическое развитие как путь к миру: Токаев](https://www.zakon.kz/sobytiia/6508520-ekonomicheskoe-razvitie-kak-put-k-miru--tokaev-napisal-statyu-dlya-amerikanskogo-zhurnala.html) (Источник *National Interest*)
 
+## Risk map
+```{python}
+#| output: asis
+import sys
+from IPython.display import display, HTML
+
+# Настройки рисков (1 - безопасно/зеленый, 10 - критично/красный)
+sectors = {
+    "Занятость": 3,
+    "Внешний сектор": 8,
+    "Бюджет": 5,
+    "Денежно-кредитная": 2,
+    "Реальный сектор": 6,
+    "Инфляция": 9
+}
+
+def get_risk_color(level):
+    """
+    Вычисляет цвет от зеленого (144, 238, 144) до красного (255, 99, 71)
+    """
+    # Простая линейная интерполяция между зеленым и красным
+    r = int(144 + (255 - 144) * (level - 1) / 9)
+    g = int(238 - (238 - 99) * (level - 1) / 9)
+    b = int(144 - (144 - 71) * (level - 1) / 9)
+    return f"rgb({r}, {g}, {b})"
+
+#sys.stdout.write('<div class="risk-grid">\n')
+#display(HTML('<div class="risk-grid">\n'))
+
+html_output = '<div class="risk-grid">\n'
+
+for name, level in sectors.items():
+    color = get_risk_color(level)
+    html_output += f"""
+    <div class="risk-card" style="background-color: {color};">
+        <div class="risk-title">{name}</div>
+        <div class="risk-value">Риск: {level}/10</div>
+    </div>
+    """
+    #sys.stdout.write(block)
+
+html_output += '</div>\n'
+#sys.stdout.write('</div>\n')
+#display(HTML('</div>\n'))
+display(HTML(html_output))
+```
+
 ## FX
 :::: {.columns}
 ::: {.column width="50%"}
@@ -51,3 +98,4 @@ Some analytical text Some analytical text Some analytical text Some analytical t
 :::
 
 ::::
+
