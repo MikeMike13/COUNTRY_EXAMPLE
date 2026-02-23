@@ -1,3 +1,4 @@
 matplotlib
 psycopg2
 pandas
+jupyter
