@@ -1,72 +1,33 @@
 ---
-title: "Kazakstan"
-subtitle: "Quarterly country report"
-author: "CCC cc"
+title: "Совкомбанк. Макро."
+
 date: today
-date-format: "YYYY[Q]Q"
+#date-format: "YYYY[Q]Q"
 ---
 
-## Last news
-* [Экономическое развитие как путь к миру: Токаев](https://www.zakon.kz/sobytiia/6508520-ekonomicheskoe-razvitie-kak-put-k-miru--tokaev-napisal-statyu-dlya-amerikanskogo-zhurnala.html) (Источник *National Interest*)
+## НОВОСТИ
+* [28-фев. Заметки об экономике: Заботкин](https://t.me/centralbank_russia/3335) (Источник *Банк России*)
+* [Направления экономических исследований](https://t.me/centralbank_russia/3303)(Источник *Банк России*)
+* [13-янв. Заявление ЦБ по ставке](https://t.me/centralbank_russia/3296)(Источник *Банк России*)
 
-## Risk map
+
+## Тепловая карта
 ```{python}
 #| output: asis
 import sys
 from IPython.display import display, HTML
 
-# Настройки рисков (1 - безопасно/зеленый, 10 - критично/красный)
-sectors = {
-    "Занятость": 3,
-    "Внешний сектор": 8,
-    "Бюджет": 5,
-    "Денежно-кредитная": 2,
-    "Реальный сектор": 6,
-    "Инфляция": 9
-}
-
-def get_risk_color(level):
-    """
-    Вычисляет цвет от зеленого (144, 238, 144) до красного (255, 99, 71)
-    """
-    # Простая линейная интерполяция между зеленым и красным
-    r = int(144 + (255 - 144) * (level - 1) / 9)
-    g = int(238 - (238 - 99) * (level - 1) / 9)
-    b = int(144 - (144 - 71) * (level - 1) / 9)
-    return f"rgb({r}, {g}, {b})"
-
-#sys.stdout.write('<div class="risk-grid">\n')
-#display(HTML('<div class="risk-grid">\n'))
-
-html_output = '<div class="risk-grid">\n'
-
-for name, level in sectors.items():
-    color = get_risk_color(level)
-    html_output += f"""
-    <div class="risk-card" style="background-color: {color};">
-        <div class="risk-title">{name}</div>
-        <div class="risk-value">Риск: {level}/10</div>
-    </div>
-    """
-    #sys.stdout.write(block)
-
-html_output += '</div>\n'
-#sys.stdout.write('</div>\n')
-#display(HTML('</div>\n'))
-display(HTML(html_output))
-```
-
-## FX
-:::: {.columns}
-::: {.column width="50%"}
-```{python}
-#| out-width: "100%"
-#| fig-align: center
-#| fig-dpi: 300
-#| fig-cap: Source
 from db_utils import sovdb_read
+from db_utils import plot_season
 from datetime import datetime
 import matplotlib.pyplot as plt
+import matplotlib as mpl
+import pandas as pd
+from dateutil.relativedelta import relativedelta
+from datetime import timedelta
+from cycler import cycler
+import math
+import numpy as np
 
 plt.rcParams['axes.titlelocation'] = 'left'
 plt.rcParams['axes.titlesize'] = 20
@@ -81,21 +42,265 @@ plt.rcParams['axes.spines.right'] = False
 plt.rcParams['figure.autolayout'] = True
 
 
-Start = datetime(2016,1,1)
-df = sovdb_read("FX_KZTUSD_NBK",Start)
+#CBRSM_COLORS = ['#0051CA', '#F8AC27', '#3F863F', '#C6DBA1', '#FDD65F', '#FBEEBD', '#50766E'];
+COLORS_DEF = ['#1D4688','#E31E25','#29524A','#D1AC76','#ABD5CD','#715B64','#BEC5AD'];
 
-if not df.empty:    
-    plt.figure()
-    plt.plot(df)
-    plt.title('KZT strengthened')    
-    plt.show()
-    plt.close()
+#prop_cycle = plt.rcParams['axes.prop_cycle']
+#№colors = prop_cycle.by_key()['COLORS_DEF']
+plt.rcParams['axes.prop_cycle'] = cycler('color', COLORS_DEF)
+mpl.rcParams['text.color'] = COLORS_DEF[0]
+
+Start = datetime(2023,1,1)
+Last_MPC = datetime(2026,2,13)
+x_lab_m = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
+# Настройки рисков (-1 дезинфляционные 1 - проинфляционные 0 - нейтреальные)
+sectors = {
+    "Банки и денежная масса": -1,
+    "Реальный сектор": -1,
+    "Занятость": -1,
+    "Внешний сектор": 1,
+    "Бюджет": 1,
+    "Рынки": 0
+}
+
+def get_risk_color(level):
+    """
+    Вычисляет цвет от зеленого (144, 238, 144) до красного (255, 99, 71)
+    """
+    if level == 1:
+        return COLORS_DEF[1]
+    else:
+        if level == -1:
+            return COLORS_DEF[0]
+        else:
+            if level == 0:
+                return COLORS_DEF[3]
+    
+    # Простая линейная интерполяция между зеленым и красным
+    #r = int(144 + (255 - 144) * (level - 1) / 2)
+    #g = int(238 - (238 - 99) * (level - 1) / 2)
+    #b = int(144 - (144 - 71) * (level - 1) / 2)
+
+    return f"rgb({r}, {g}, {b})"
+
+html_output = '<div class="risk-grid">\n'
+
+for name, level in sectors.items():
+    color = get_risk_color(level)
+    html_output += f"""
+    <div class="risk-card" style="background-color: {color};">
+        <div class="risk-title">{name}</div>
+    </div>
+    """
+html_output += '</div>\n'
+display(HTML(html_output))
+```
+
+## Банки и денежная масса
+:::: {.columns}
+::: {.column width="50%"}
+```{python}
+#| out-width: "100%"
+#| fig-align: center
+#| fig-dpi: 300
+#| fig-cap: Source
+tick = "RU_M2XXFXSA_M_CB"
+data = sovdb_read(tick,Start+relativedelta(months=-1))        
+titl = "M2X, exc FX diff, SA (YTD, EOM), "
+freq = "M"
+is_pop = 1; is_norm=1; show_ends = 1; rnd_to = 3
+fig, ax = plot_season(data, freq, titl, is_pop, is_norm, show_ends, rnd_to)  
+#plt.close(fig) 
+plt.show()
+plt.close()
+
 ```
 :::
 
 ::: {.column width="50%"}
-Some analytical text Some analytical text Some analytical text Some analytical text Some analytical text Some analytical text Some analytical text Some analytical text Some analytical text Some analytical text Some analytical text 
+```{python}
+tick = "RU_DTSURV_OTHSECMOMEXFX_M_CB"
+data = sovdb_read(tick,Start+timedelta(days=1))
+
+n_y = math.ceil((data.shape[0])/12)
+fig, ax = plt.subplots()
+for i in range(n_y):
+    if i==n_y-1:                
+        temp = data.values[((i+1)-1)*12:]
+        #temp = np.cumprod(1+temp/100)
+        if temp.shape[0] == 1:
+            p1 = ax.plot(temp, 'xr') 
+        else:                    
+            p1 = ax.plot(temp, 'r') 
+            ax.text(temp.shape[0]-1, float(np.ravel(temp)[-1]), temp[-1][0], color='r');#
+    else:
+
+        temp = data.values[((i+1)-1)*12:(i+1)*12]
+        #temp = np.cumprod(1+temp/100)
+        p1 = ax.plot(temp, color=COLORS_DEF[0]) 
+        ax.text(11, float(np.ravel(temp)[-1]), str(data.index[((i+1)-1)*12].year), color=COLORS_DEF[0]);#
+
+ax.axhline(y=0, color='k', linestyle='-')        
+plt.xticks([r for r in range(len(x_lab_m))], x_lab_m)   
+ax.set_xticklabels(x_lab_m, rotation=90) 
+plt.title("Claims on other: Total, mom, ex FX, "+data.index[-1].strftime('%b-%Y'))
+plt.show() 
+plt.close(fig)
+```
+:::
+::::
+
+## Реальный сектор
+:::: {.columns}
+::: {.column width="50%"}
+```{python}
+#| out-width: "100%"
+#| fig-align: center
+#| fig-dpi: 300
+#| fig-cap: Source
+df = sovdb_read("RU_GDPRYOY_M_ME",Start)
+plt.figure()
+plt.plot(df)
+plt.text(df.index[-1],df['Value'].iloc[-1],df['Value'].iloc[-1])
+#plt.axvline(Last_MPC,color='r',linestyle='--')
+plt.axhline(0,color=(0.7,0.7,0.7))
+plt.title("Минэк: ВВП ежемесячно, "+df.index[-1].strftime("%b,%y"))    
+plt.show()
+plt.close()
+
+```
+:::
+
+::: {.column width="50%"}
+```{python}
+df = sovdb_read("RU_COMPMON_BC_NC_0_SA_M_CB",Start)
+plt.figure()
+plt.plot(df)
+plt.text(df.index[-1],df['Value'].iloc[-1],round(df['Value'].iloc[-1],2))
+plt.title("ЦБ: Индикатор бизнесс-климата, "+df.index[-1].strftime("%b,%y"))    
+plt.show()
+plt.close()
+```
 :::
 
 ::::
 
+## Занятость
+:::: {.columns}
+::: {.column width="50%"}
+```{python}
+#| out-width: "100%"
+#| fig-align: center
+#| fig-dpi: 300
+#| fig-cap: Source
+df = sovdb_read("RU_UNEMPLR_M_RS",Start)
+plt.figure()
+plt.plot(df)
+plt.text(df.index[-1],df['Value'].iloc[-1],df['Value'].iloc[-1])
+#plt.axvline(Last_MPC,color='r',linestyle='--')
+#plt.axhline(0,color=(0.7,0.7,0.7))
+plt.title("Безработица, %, "+df.index[-1].strftime("%b,%y"))
+plt.show()
+plt.close()
+
+```
+:::
+## Внешний сектор
+:::: {.columns}
+::: {.column width="50%"}
+```{python}
+#| out-width: "100%"
+#| fig-align: center
+#| fig-dpi: 300
+#| fig-cap: Source
+#Start_l = datetime(2025,1,1)
+df = sovdb_read("RU_OIL_TAX_M_OFF",Start)
+df1 = sovdb_read("CMDT_OILBRENT_FOB_EU_RT",Start)
+plt.figure()
+plt.plot(df)
+plt.plot(df1,color=COLORS_DEF[0],linestyle=':')
+plt.text(df.index[-1],df['Value'].iloc[-1],str(df['Value'].iloc[-1]))
+plt.text(df1.index[-1],df1['Value'].iloc[-1],str(df1['Value'].iloc[-1]))
+plt.legend(["Нефть для налогообложения, "+df.index[-1].strftime("%b, %d"), "Brent, FOB, "+df1.index[-1].strftime("%d, %b, %y")],frameon=False) 
+plt.axvline(Last_MPC,linestyle='--',color=COLORS_DEF[1])
+plt.title("Нефть")
+plt.show()
+plt.close()
+
+```
+:::
+
+## Бюджет
+:::: {.columns}
+::: {.column width="50%"}
+```{python}
+#| out-width: "100%"
+#| fig-align: center
+#| fig-dpi: 300
+#| fig-cap: Source
+Start_l = datetime(2025,1,1)
+
+df = sovdb_read("RU_KBK_209251_FED_M_FT",Start_l)/1000000000000
+df = df.asfreq('M').groupby(pd.Grouper(freq='Y')).diff().fillna(df)                        
+
+plt.figure()
+plt.bar(df.index, df.Value, width=15)
+plt.text(df.index[-1],df['Value'].iloc[-1],str(round(df['Value'].iloc[-1],2)))
+#plt.axvline(Last_MPC,linestyle='--',color=COLORS_DEF[1])
+plt.axhline(df['Value'].iloc[-1],linestyle='--',color=COLORS_DEF[0])
+
+plt.title("Баланс фед бюджета, трлн руб., "+df.index[-1].strftime("%b, %d"))
+plt.show()
+plt.close()
+
+```
+:::
+
+## Рынки
+:::: {.columns}
+::: {.column width="50%"}
+```{python}
+#| out-width: "100%"
+#| fig-align: center
+#| fig-dpi: 300
+#| fig-cap: Source
+Start_l = datetime(2025,1,1)
+df = sovdb_read("FX_RUBUSD_CBR",Start_l)
+df_0 = df[df.index<Last_MPC]
+chng = str(round((df['Value'].iloc[-1]/df_0['Value'].iloc[-1]-1)*100,2))+"%"
+plt.figure()
+plt.plot(df)
+plt.text(df.index[-1],df['Value'].iloc[-1],str(df['Value'].iloc[-1])+" ("+chng+")")
+plt.axvline(Last_MPC,linestyle='--',color=COLORS_DEF[1])
+#plt.axhline(0,color=(0.7,0.7,0.7))
+
+plt.title("RUBUSD. "+df.index[-1].strftime("%b, %d"))
+plt.show()
+plt.close()
+
+```
+:::
+
+::: {.column width="50%"}
+```{python}
+#| out-width: "100%"
+#| fig-align: center
+#| fig-dpi: 300
+#| fig-cap: Source
+Start_l = datetime(2025,1,1)
+df = sovdb_read("FX_RUBCNY_CBR",Start_l)
+df_0 = df[df.index<Last_MPC]
+chng = str(round((df['Value'].iloc[-1]/df_0['Value'].iloc[-1]-1)*100,2))+"%"
+plt.figure()
+plt.plot(df)
+plt.text(df.index[-1],df['Value'].iloc[-1],str(df['Value'].iloc[-1])+" ("+chng+")")
+plt.axvline(Last_MPC,linestyle='--',color=COLORS_DEF[1])
+#plt.axhline(0,color=(0.7,0.7,0.7))
+
+plt.title("RUBCNY. "+df.index[-1].strftime("%b, %d"))
+plt.show()
+plt.close()
+
+```
+:::
+::::
