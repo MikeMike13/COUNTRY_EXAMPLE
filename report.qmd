@@ -76,12 +76,7 @@ def get_risk_color(level):
             if level == 0:
                 return COLORS_DEF[3]
     
-    # Простая линейная интерполяция между зеленым и красным
-    #r = int(144 + (255 - 144) * (level - 1) / 2)
-    #g = int(238 - (238 - 99) * (level - 1) / 2)
-    #b = int(144 - (144 - 71) * (level - 1) / 2)
-
-    return f"rgb({r}, {g}, {b})"
+        return f"rgb({r}, {g}, {b})"
 
 html_output = '<div class="risk-grid">\n'
 
